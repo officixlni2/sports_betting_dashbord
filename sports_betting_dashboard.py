@@ -2,43 +2,63 @@
 import streamlit as st
 import requests
 import pandas as pd
-import numpy as np
 
-# Title
-st.title("Sports Betting Dashboard with Live Data")
+# API Key
+API_KEY = "549902"
 
-# Sidebar for user inputs
-st.sidebar.header("Select Sport and League")
-sport = st.sidebar.selectbox("Sport", ["Soccer", "Basketball", "Tennis"])
-league = st.sidebar.text_input("League (e.g., EPL, NBA)")
-
-# Function to fetch data from OddsAPI (replace with your API key)
-def fetch_live_data(sport, league, api_key="8c0a8a88ea324424de4fa9f606f633a1"):
-    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds/"
-    params = {"apiKey": api_key, "regions": "us", "markets": "h2h,spreads", "league": league}
+# Function to fetch data from The Sports DB API
+def fetch_data(endpoint, params=None):
+    url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/{endpoint}"
     response = requests.get(url, params=params)
     if response.status_code == 200:
         return response.json()
     else:
-        st.error(f"Failed to fetch data: {response.status_code}")
+        st.error(f"Failed to fetch data from The Sports DB: {response.status_code}")
         return None
 
-# Fetch and display live data
-if sport and league:
-    st.write(f"### Fetching Live Odds for {sport} ({league})...")
-    data = fetch_live_data(sport, league)
-    if data:
-        odds_data = []
-        for game in data:
-            match = game["home_team"] + " vs " + game["away_team"]
-            home_odds = game["bookmakers"][0]["markets"][0]["outcomes"][0]["price"]
-            away_odds = game["bookmakers"][0]["markets"][0]["outcomes"][1]["price"]
-            odds_data.append({"Match": match, "Home Odds": home_odds, "Away Odds": away_odds})
-        
-        # Display the odds in a table
-        st.write("### Live Odds")
-        odds_df = pd.DataFrame(odds_data)
-        st.table(odds_df)
+# Function to display data in a table format
+def display_table(data, title):
+    if data is not None and len(data) > 0:
+        st.write(f"### {title}")
+        st.dataframe(pd.DataFrame(data))
+    else:
+        st.warning(f"No data available for {title}.")
+
+# Sidebar for user inputs
+st.sidebar.header("Select Sport and Data Type")
+sport = st.sidebar.selectbox("Sport", ["NBA", "NFL", "NHL", "Soccer", "Tennis"])
+data_type = st.sidebar.radio("Data Type", ["Upcoming Games", "Previous Games", "Standings", "Injuries"])
+
+# Map sport to league IDs (replace with actual IDs from The Sports DB)
+SPORTS_IDS = {
+    "NBA": "4387",
+    "NFL": "4391",
+    "NHL": "4380",
+    "Soccer": "4328",  # Example for English Premier League
+    "Tennis": "4396"  # Example Tennis ID
+}
+
+# Fetch and display data based on user selection
+if sport and data_type:
+    league_id = SPORTS_IDS.get(sport)
+    if data_type == "Upcoming Games":
+        endpoint = f"eventsnextleague.php"
+        data = fetch_data(endpoint, {"id": league_id})
+        if data:
+            display_table(data.get("events", []), f"Upcoming {sport} Games")
+    elif data_type == "Previous Games":
+        endpoint = f"eventspastleague.php"
+        data = fetch_data(endpoint, {"id": league_id})
+        if data:
+            display_table(data.get("events", []), f"Previous {sport} Games")
+    elif data_type == "Standings":
+        endpoint = f"lookuptable.php"
+        data = fetch_data(endpoint, {"l": league_id})
+        if data:
+            display_table(data.get("table", []), f"{sport} Standings")
+    elif data_type == "Injuries":
+        # No direct injuries endpoint, replace with placeholder or relevant lookup if available
+        st.warning("Injuries data not supported for this sport in The Sports DB.")
 
 # Footer
 st.write("### Use this dashboard for informational purposes only. Always bet responsibly.")
