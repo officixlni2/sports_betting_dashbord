@@ -13,7 +13,7 @@ sport = st.sidebar.selectbox("Sport", ["Soccer", "Basketball", "Tennis"])
 league = st.sidebar.text_input("League (e.g., EPL, NBA)")
 
 # Function to fetch data from OddsAPI (replace with your API key)
-def fetch_live_data(sport, league, api_key="YOUR_API_KEY"):
+def fetch_live_data(sport, league, api_key="8c0a8a88ea324424de4fa9f606f633a1"):
     url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds/"
     params = {"apiKey": api_key, "regions": "us", "markets": "h2h,spreads", "league": league}
     response = requests.get(url, params=params)
