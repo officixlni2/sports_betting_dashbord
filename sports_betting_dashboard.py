@@ -1,40 +1,44 @@
 
 import streamlit as st
+import requests
 import pandas as pd
 import numpy as np
 
 # Title
-st.title("Sports Betting Predictive Dashboard")
+st.title("Sports Betting Dashboard with Live Data")
 
 # Sidebar for user inputs
-st.sidebar.header("Input Game Details")
-game_type = st.sidebar.selectbox("Select Sport", ["Soccer", "Basketball", "Tennis"])
-home_team = st.sidebar.text_input("Home Team")
-away_team = st.sidebar.text_input("Away Team")
-home_odds = st.sidebar.number_input("Home Odds", value=1.8)
-away_odds = st.sidebar.number_input("Away Odds", value=2.5)
+st.sidebar.header("Select Sport and League")
+sport = st.sidebar.selectbox("Sport", ["Soccer", "Basketball", "Tennis"])
+league = st.sidebar.text_input("League (e.g., EPL, NBA)")
 
-# Simulating outcomes
-def simulate_game(home_odds, away_odds, simulations=10000):
-    home_prob = 1 / home_odds
-    away_prob = 1 / away_odds
-    home_wins = np.random.binomial(simulations, home_prob / (home_prob + away_prob))
-    away_wins = simulations - home_wins
-    return home_wins / simulations, away_wins / simulations
+# Function to fetch data from OddsAPI (replace with your API key)
+def fetch_live_data(sport, league, api_key="YOUR_API_KEY"):
+    url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds/"
+    params = {"apiKey": api_key, "regions": "us", "markets": "h2h,spreads", "league": league}
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error(f"Failed to fetch data: {response.status_code}")
+        return None
 
-if home_team and away_team:
-    home_win_prob, away_win_prob = simulate_game(home_odds, away_odds)
-    
-    # Display Results
-    st.write(f"### Matchup: {home_team} vs {away_team}")
-    st.write(f"**Home Team Win Probability**: {home_win_prob * 100:.2f}%")
-    st.write(f"**Away Team Win Probability**: {away_win_prob * 100:.2f}%")
-    
-    # Chart for probabilities
-    st.bar_chart(pd.DataFrame({
-        "Teams": [home_team, away_team],
-        "Win Probability": [home_win_prob, away_win_prob]
-    }))
+# Fetch and display live data
+if sport and league:
+    st.write(f"### Fetching Live Odds for {sport} ({league})...")
+    data = fetch_live_data(sport, league)
+    if data:
+        odds_data = []
+        for game in data:
+            match = game["home_team"] + " vs " + game["away_team"]
+            home_odds = game["bookmakers"][0]["markets"][0]["outcomes"][0]["price"]
+            away_odds = game["bookmakers"][0]["markets"][0]["outcomes"][1]["price"]
+            odds_data.append({"Match": match, "Home Odds": home_odds, "Away Odds": away_odds})
+        
+        # Display the odds in a table
+        st.write("### Live Odds")
+        odds_df = pd.DataFrame(odds_data)
+        st.table(odds_df)
 
 # Footer
 st.write("### Use this dashboard for informational purposes only. Always bet responsibly.")
