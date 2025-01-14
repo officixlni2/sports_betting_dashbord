@@ -60,5 +60,16 @@ if sport and data_type:
         # No direct injuries endpoint, replace with placeholder or relevant lookup if available
         st.warning("Injuries data not supported for this sport in The Sports DB.")
 
+# Insights Section
+st.header("Insights and Analysis")
+user_query = st.text_input("Ask a question about the selected sport or matchup (e.g., 'Who is likely to win Lakers vs Heat?')")
+if user_query:
+    st.write(f"### Your Question: {user_query}")
+    # Placeholder response for now
+    st.write("Analyzing the matchup...")
+    st.write("Based on recent trends and stats, here are the key insights:")
+    st.write("- Example insight: The Lakers have won 4 of their last 5 games.")
+    st.write("- Example insight: Heat's top scorer is injured for this matchup.")
+
 # Footer
 st.write("### Use this dashboard for informational purposes only. Always bet responsibly.")
